@@ -1,15 +1,26 @@
 import Collection from '@/components/shared/Collection'
 import { Button } from '@/components/ui/button'
 import { getEventsByUser } from '@/lib/actions/events.actions'
+import { getOrdersByUser } from '@/lib/actions/order.actions'
+import { IOrder } from '@/lib/database/models/order.model'
+import { SearchParamProps } from '@/types'
 import { auth } from '@clerk/nextjs'
 import Link from 'next/link'
 import React from 'react'
 
-const profilePage = async () => {
+const profilePage = async ({searchParams}:SearchParamProps) => {
     const {sessionClaims}  = auth();
     const userId = sessionClaims?.userId as string;
 
-    const organizedEvents = await getEventsByUser({userId,page:1})
+    const ordersPage = Number(searchParams?.ordersPage) || 1;
+    const eventsPage = Number(searchParams?.eventsPage) || 1;
+
+    const organizedEvents = await getEventsByUser({userId,page:eventsPage})
+    const orders = await getOrdersByUser({userId,page:ordersPage})
+    const orderedEvents = orders?.data.map((order:IOrder)=> order.event) || [];
+
+    
+
   return (
     <>
     {/* my tickes */}
@@ -24,18 +35,18 @@ const profilePage = async () => {
         </div>
     </section>
 
-    {/* <section className='wrapper my-8'>
+    <section className='wrapper my-8'>
         <Collection 
-            data={events?.data}
+            data={orderedEvents}
             emptyTitle="no event tickets purchased yet"
             emptyStateSubtext="plenty of events to explore"
             collectionType="My_Tickets"
             limit={3}
-            page={1}
+            page={ordersPage}
             urlParamName='ordersPage'
-            totalPages={2}
+            totalPages={orders?.totalPages}
             />
-    </section> */}
+    </section> 
     {/* events organised  */}
         <section className='bg-primary-50 bg-dotted-pattern bg-cover bg-center py-5 md:py-10'>
             <div className='wrapper flex items-center justify-center sd:justify-between'>
@@ -55,9 +66,9 @@ const profilePage = async () => {
             emptyStateSubtext="go create some"
             collectionType="Events_Organized"
             limit={6}
-            page={1}
+            page={eventsPage}
             urlParamName='eventsPage'
-            totalPages={2}
+            totalPages={organizedEvents?.totalPages}
             />
     </section>
     </>
